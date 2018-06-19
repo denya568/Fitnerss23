@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class DBHelper extends SQLiteOpenHelper {
 
-    public static final int VERSION = 8;
+    public static final int VERSION = 1;
     public static final String NAME_OF_DB = "tasks";
     public static final String TABLE_COMPLETED = "completed";
     public static final String TABLE_NON_COMPLETED = "noncompleted";
