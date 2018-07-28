@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
                 String task = editText.getText().toString();
                 add(task, getResources().getColor(R.color.blackw), DBHelper.TABLE_NON_COMPLETED);
                 editText.setText("");
-                hideKeyBoard();
+                //hideKeyBoard();
                 Toast.makeText(getApplicationContext(), "Задание ДОБАВЛЕНО!", Toast.LENGTH_SHORT).show();
                 nlist();
                 clist();
