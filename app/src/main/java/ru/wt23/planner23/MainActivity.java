@@ -26,6 +26,9 @@ import android.widget.Toast;
 
 import com.makeramen.roundedimageview.RoundedImageView;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity {
     EditText editText;
     Button enter;
@@ -125,6 +128,8 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void nlist() {
+        List<CardView> viewsList = new ArrayList<>();
+
         nonCompleted.removeAllViews();
         LinearLayout.LayoutParams lpTask = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         lpTask.weight = 30;
@@ -186,17 +191,55 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 
+            tvTask.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    changeDialog(id, DBHelper.TABLE_NON_COMPLETED, task, color);
+                }
+            });
+
             tLay.addView(tvTask, lpTask);
             tLay.addView(ivOk, lpOk);
 
             cardView.addView(tLay);
 
-
-            nonCompleted.addView(cardView);
+            viewsList.add(cardView);
 
         }
         cursor.close();
         database.close();
+
+        for (int i = viewsList.size()-1; i >= 0; i--) {
+            nonCompleted.addView(viewsList.get(i));
+        }
+
+    }
+
+    private void changeDialog(final int id, final String table, String task, final int color) {
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_change, null);
+        final EditText etTask = (EditText) view.findViewById(R.id.et_task);
+        etTask.setHint(task);
+        etTask.setText(task);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Изменение задания");
+        builder.setView(view);
+        builder.setPositiveButton("Сохранить", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                update(id, table, etTask.getText().toString(), color);
+                nlist();
+                clist();
+            }
+        });
+        builder.setNegativeButton("Отмена", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.cancel();
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
 
     }
 
@@ -307,7 +350,6 @@ public class MainActivity extends AppCompatActivity {
         builder.setPositiveButton("Ок", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-
                 update(id, table, txt, color[0]);
                 nlist();
                 clist();
