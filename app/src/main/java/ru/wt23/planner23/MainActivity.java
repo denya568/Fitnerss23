@@ -1,11 +1,13 @@
 package ru.wt23.planner23;
 
+import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
 
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -14,6 +16,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
@@ -126,15 +129,45 @@ public class MainActivity extends AppCompatActivity {
         database.close();
     }
 
+    List<Obj> objs = new ArrayList<>();
 
+    private void swipe(Obj obj) {
+        objs.add(obj);
+        if (objs.size() >= 2) {
+            update(objs.get(0).id, DBHelper.TABLE_NON_COMPLETED, objs.get(1).task, objs.get(1).color);
+            update(objs.get(1).id, DBHelper.TABLE_NON_COMPLETED, objs.get(0).task, objs.get(0).color);
+
+            objs.clear();
+            nlist();
+            clist();
+        }
+    }
+
+    private class Obj {
+        int id;
+        String task;
+        int color;
+
+        Obj(int id, String task, int color) {
+            this.id = id;
+            this.task = task;
+            this.color = color;
+        }
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
     private void nlist() {
         List<CardView> viewsList = new ArrayList<>();
+        objs.clear();
 
         nonCompleted.removeAllViews();
+        LinearLayout.LayoutParams lpSwipe = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        lpSwipe.weight = 125;
         LinearLayout.LayoutParams lpTask = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        lpTask.weight = 30;
+        lpTask.weight = 50;
         LinearLayout.LayoutParams lpOk = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        lpOk.weight = 170;
+        lpOk.weight = 125;
+
 
         SQLiteDatabase database = dbHelper.getReadableDatabase();
         Cursor cursor = database.query(DBHelper.TABLE_NON_COMPLETED, null, null, null, null, null, null);
@@ -147,21 +180,24 @@ public class MainActivity extends AppCompatActivity {
             final String task = cursor.getString(index_NAME);
             final int color = cursor.getInt(index_COLOR);
 
-            CardView cardView = new CardView(this);
+            final CardView cardView = new CardView(this);
             cardView.setCardBackgroundColor(color);
             cardView.setUseCompatPadding(true);
 
-            cardView.setOnLongClickListener(new View.OnLongClickListener() {
+            final LinearLayout tLay = new LinearLayout(this);
+            tLay.setWeightSum(300);
+            tLay.setOrientation(LinearLayout.HORIZONTAL);
+
+            ImageView ivSwipe = new ImageView(this);
+            ivSwipe.setImageDrawable(getResources().getDrawable(R.drawable.ic_unfold_more_black_24dp));
+            ivSwipe.setColorFilter(Color.parseColor("#23a032"));
+            ivSwipe.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public boolean onLongClick(View view) {
-                    colorDialog(id, task, DBHelper.TABLE_NON_COMPLETED);
-                    return false;
+                public void onClick(View view) {
+                    cardView.setCardBackgroundColor(Color.parseColor("#23a032"));
+                    swipe(new Obj(id, task, color));
                 }
             });
-
-            LinearLayout tLay = new LinearLayout(this);
-            tLay.setWeightSum(200);
-            tLay.setOrientation(LinearLayout.HORIZONTAL);
 
             TextView tvTask = new TextView(this);
             tvTask.setGravity(Gravity.CENTER | Gravity.START);
@@ -198,10 +234,20 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 
+            tvTask.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View view) {
+                    colorDialog(id, task, DBHelper.TABLE_NON_COMPLETED);
+                    return false;
+                }
+            });
+
+            tLay.addView(ivSwipe, lpSwipe);
             tLay.addView(tvTask, lpTask);
             tLay.addView(ivOk, lpOk);
 
             cardView.addView(tLay);
+
 
             viewsList.add(cardView);
 
@@ -209,7 +255,7 @@ public class MainActivity extends AppCompatActivity {
         cursor.close();
         database.close();
 
-        for (int i = viewsList.size()-1; i >= 0; i--) {
+        for (int i = viewsList.size() - 1; i >= 0; i--) {
             nonCompleted.addView(viewsList.get(i));
         }
 
@@ -220,6 +266,7 @@ public class MainActivity extends AppCompatActivity {
         final EditText etTask = (EditText) view.findViewById(R.id.et_task);
         etTask.setHint(task);
         etTask.setText(task);
+        etTask.setSelection(task.length());
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Изменение задания");
@@ -368,6 +415,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void clist() {
+        objs.clear();
         LinearLayout.LayoutParams lpTask = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         lpTask.weight = 30;
         LinearLayout.LayoutParams lpOk = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
